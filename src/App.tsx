@@ -5,7 +5,8 @@ function App() {
   const [inputText, setInputText] = useState("");
   type Priority = "Petite" | "Moyenne" | "Grande";
   const [priority, setPriority] = useState<Priority>("Moyenne");
-  const compteur = useRef(0);
+  const localStorageIndex = useRef(localStorage.length);
+  const compteur = useRef(localStorageIndex.current);
 
   type Todo = {
     id: number,
@@ -17,11 +18,93 @@ function App() {
     setInputText(e);
   }
 
-  const [taskList, setTaskList] = useState<Todo[]>([])
-  const [smallTaskList, setSmallTaskList] = useState<Todo[]>([]);
-  const [mediumTaskList, setMediumTaskList] = useState<Todo[]>([]);
-  const [largeTaskList, setLargeTaskList] = useState<Todo[]>([]);
-  const [allTaskList, setAllTaskList] = useState<Todo[]>([]);
+  const [taskList, setTaskList] = useState<Todo[]>(() => {
+    const tasks: Todo[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key === null) continue;
+
+      const value = localStorage.getItem(key);
+      if (value !== null) {
+        tasks.push(JSON.parse(value) as Todo);
+      }
+    }
+
+    return tasks;
+  });
+  const [smallTaskList, setSmallTaskList] = useState<Todo[]>(() => {
+    const tasks: Todo[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key === null) continue;
+
+      const value = localStorage.getItem(key);
+      if (value !== null) {
+        const task = JSON.parse(value) as Todo;
+        if (task.priority === "Petite") {
+          tasks.push(task);
+        }
+      }
+    }
+
+    return tasks;
+  });
+
+  const [mediumTaskList, setMediumTaskList] = useState<Todo[]>(() => {
+    const tasks: Todo[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key === null) continue;
+
+      const value = localStorage.getItem(key);
+      if (value !== null) {
+        const task = JSON.parse(value) as Todo;
+        if (task.priority === "Moyenne") {
+          tasks.push(task);
+        }
+      }
+    }
+
+    return tasks;
+  });
+
+  const [largeTaskList, setLargeTaskList] = useState<Todo[]>(() => {
+    const tasks: Todo[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key === null) continue;
+
+      const value = localStorage.getItem(key);
+      if (value !== null) {
+        const task = JSON.parse(value) as Todo;
+        if (task.priority === "Grande") {
+          tasks.push(task);
+        }
+      }
+    }
+
+    return tasks;
+  });
+
+  const [allTaskList, setAllTaskList] = useState<Todo[]>(() => {
+    const tasks: Todo[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key === null) continue;
+
+      const value = localStorage.getItem(key);
+      if (value !== null) {
+        tasks.push(JSON.parse(value) as Todo);
+      }
+    }
+
+    return tasks;
+  });
   const [smallTaskActive, setSmallTaskActive] = useState(false);
   const [mediumTaskActive, setMediumTaskActive] = useState(false);
   const [largeTaskActive, setLargeTaskActive] = useState(false);
@@ -31,22 +114,28 @@ function App() {
   function addTask() {
     if (!inputText) return;
     const newTask: Todo = {
-      id: compteur.current++,
+      id: compteur.current,
       name: inputText,
       priority: priority
   }
 
+    let exists = taskList.some(task => task.name === newTask.name && task.priority === newTask.priority)
     if (taskList.length == 0) {
+      newTask.id = compteur.current++;
       setTaskList([newTask]);
-    } else if(!taskList.some(task => task.name === newTask.name && task.priority === newTask.priority)) {
+      localStorage.setItem(newTask.id.toString(), JSON.stringify(newTask));
+    } else if(!exists) {
       // The task we are adding doesn't already exists
       // We need to give a new id to the new task
       newTask.id = compteur.current++;
       console.log("Adding to the list");
       setTaskList([...taskList, newTask]);
-    }
+      localStorage.setItem(newTask.id.toString(), JSON.stringify(newTask));
+     }
+    
     // Adding tasks to priority array
-    switch (newTask.priority) {
+    if (!exists) {
+      switch (newTask.priority) {
       case "Petite":
         if (smallTaskList.length === 0) {
           setSmallTaskList([newTask]);
@@ -79,6 +168,8 @@ function App() {
     setAllTaskList([...allTaskList, newTask]);
     console.log(allTaskList);
   }
+    }
+  
 
   // Delete, only for testing if priority arrays are not empty
   useEffect(() => {
